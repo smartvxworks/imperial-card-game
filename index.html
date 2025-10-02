@@ -1,1 +1,1445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>皇帝妃子翻牌游戏 - 全屏3D皇冠与舞台灯光特效</title>
+    <!-- 引入 Font Awesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
 
+        body {
+            background: linear-gradient(135deg, #2c3e50 0%, #4a235a 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* ========== 主容器 ========== */
+        .container {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            position: relative;
+            min-height: 600px;
+            height: calc(100vh - 40px);
+            max-height: calc(100vh - 20px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ========== 全屏按钮 ========== */
+        .fullscreen-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 215, 0, 0.3);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            border: 1px solid #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            z-index: 20;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(255, 215, 0, 0.5);
+            transform: scale(1.1);
+        }
+
+        /* ========== 内嵌滚动区域 ========== */
+        #scrollable-area {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            margin-top: 10px;
+            border-radius: 10px;
+            background: rgba(75, 0, 130, 0.1);
+        }
+
+        #content-wrapper {
+            width: calc(100% - 20px);
+            height: 100%;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 10px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            display: block;
+        }
+
+        #content-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* ========== 滑动条样式 ========== */
+        .inner-scrollbar-track {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            width: 8px;
+            height: calc(100% - 20px);
+            background: rgba(139, 0, 139, 0.3);
+            border-radius: 4px;
+            border: 1px solid #9370db;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #scrollable-area:hover .inner-scrollbar-track,
+        .inner-scrollbar-track.dragging {
+            opacity: 0.8 !important;
+        }
+
+        .inner-scrollbar-thumb {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 8px;
+            background: linear-gradient(to bottom, #daa520, #ffd700);
+            border-radius: 4px;
+            box-shadow: 0 0 5px rgba(255, 215, 0, 0.7);
+            cursor: ns-resize;
+            opacity: 0.9;
+        }
+
+        /* ========== 游戏组件通用样式 ========== */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        h1 {
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            color: #ffd700;
+            font-size: 2.5rem;
+        }
+
+        .crown-icon {
+            font-size: 2.5rem;
+            color: #ffd700;
+        }
+
+        .instructions {
+            background: rgba(139, 0, 130, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: left;
+            border: 1px solid #9370db;
+        }
+
+        .instructions h3 {
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+
+        .game-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: rgba(75, 0, 130, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #9370db;
+            gap: 10px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .info-value {
+            font-size: 1.8rem;
+            color: #ffd700;
+        }
+
+        .level-info {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+
+        .current-ranks {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(139, 0, 130, 0.2);
+            border-radius: 10px;
+            border: 1px solid #9370db;
+        }
+
+        /* ========== 卡片与游戏板 ========== */
+        .game-board {
+            display: grid;
+            grid-gap: 10px;
+            margin: 0 auto 20px;
+            max-width: 600px;
+            justify-content: center;
+            min-height: 100px;
+        }
+
+        .card {
+            height: 100px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched .card-inner {
+            box-shadow: 0 0 15px gold;
+        }
+
+        .card-front,
+        .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .card-back {
+            background: linear-gradient(45deg, #daa520 0%, #ffd700 100%);
+            font-size: 24px;
+            color: #4b0082;
+            border: 2px solid #ffd700;
+        }
+
+        .card-front {
+            background: linear-gradient(45deg, #f8f8ff 0%, #e6e6fa 100%);
+            transform: rotateY(180deg);
+            padding: 8px;
+            text-align: center;
+            border: 2px solid #daa520;
+        }
+
+        .imperial-front {
+            background: linear-gradient(45deg, #fff0f0 0%, #ffd6d6 100%);
+            border: 2px solid #ff9999;
+        }
+
+        .rank {
+            font-size: 14px;
+            color: #8b0000;
+            margin-bottom: 3px;
+            font-weight: bold;
+        }
+
+        .crowns {
+            display: flex;
+            justify-content: center;
+            margin: 3px 0;
+        }
+
+        .crown {
+            color: #ffd700;
+            margin: 0 1px;
+            font-size: 12px;
+            text-shadow: 0px 0px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .ad-img {
+            max-width: 85%;
+            max-height: 45px;
+            object-fit: contain;
+            margin-bottom: 3px;
+            border-radius: 5px;
+            color: white;
+            font-size: clamp(10px, 2.5vw, 16px); /* 自适应字体大小 */
+            font-weight: bold;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .points {
+            color: #ff4500;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .controls {
+            margin-top: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(45deg, #daa520 0%, #ffd700 100%);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            color: #4b0082;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            min-height: 40px;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(0, 100, 0, 0.3);
+            color: #7fff00;
+            display: none;
+            animation: fadeIn 1s;
+        }
+
+        .rankings {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .rank-item {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #daa520;
+            font-size: 14px;
+        }
+
+        .level-selection {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .level-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #daa520 0%, #ffd700 100%);
+            color: #4b0082;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .level-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .level-btn.current {
+            background: linear-gradient(45deg, #ff9999 0%, #ff4d4d 100%);
+            color: white;
+        }
+
+        .level-btn.completed {
+            background: linear-gradient(45deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pointsAnimation {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+
+        .points-popup {
+            position: absolute;
+            color: #ff4500;
+            font-weight: bold;
+            font-size: 18px;
+            text-shadow: 1px 1px 2px black;
+            z-index: 100;
+            pointer-events: none;
+            animation: pointsAnimation 1s ease-out forwards;
+        }
+
+        /* ============= 3D皇冠全屏动画样式 ============= */
+        
+        /* --- 原始皇冠动画（保留作为备选或fallback） --- */
+        .crown-animation-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        .crown-burst {
+            font-size: 100px;
+            color: gold;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8),
+                        0 0 40px rgba(255, 215, 0, 0.6),
+                        0 0 60px rgba(255, 215, 0, 0.4);
+            opacity: 0;
+            transform: scale(0) rotate(0deg);
+            transform-style: preserve-3d;
+            animation: expandCrown 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .rank-queen .crown-burst {
+            color: #FFD700;
+            text-shadow: 0 0 30px #FFD700,
+                        0 0 60px #FFD700,
+                        0 0 90px #FFD700,
+                        0 0 120px #FFEC8B;
+            animation: expandCrown 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, pulseGlow 1.5s infinite alternate;
+        }
+
+        .rank-imperial-noble .crown-burst {
+            color: #FFA500;
+            text-shadow: 0 0 20px #FFA500, 0 0 40px #FF8C00;
+        }
+
+        .rank-noble .crown-burst {
+            color: #C0C0C0;
+            text-shadow: 0 0 20px #C0C0C0, 0 0 40px #D3D3D3;
+        }
+
+        .rank-consort .crown-burst {
+            color: #FFFACD;
+            text-shadow: 0 0 15px #FFFACD;
+        }
+
+        @keyframes expandCrown {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            50% { transform: scale(8) rotate(180deg); opacity: 1; }
+            100% { transform: scale(25) rotate(360deg); opacity: 0; }
+        }
+
+        @keyframes pulseGlow {
+            from {
+                text-shadow: 0 0 30px #FFD700, 0 0 60px #FFD700;
+            }
+            to {
+                text-shadow: 0 0 50px #FFD700, 0 0 100px #FFD700, 0 0 150px #FFEC8B;
+            }
+        }
+
+        /* --- 新增：更真实的3D皇冠动画 --- */
+        .three-dee-crown {
+            position: relative;
+            width: 100px; /* 初始尺寸 */
+            height: 60px;
+            transform-style: preserve-3d;
+            animation: expand3DCrown 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* 皇冠主体 */
+        .crown-base {
+            position: absolute;
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(to right, #D4AF37, #FFD700, #D4AF37);
+            border-radius: 50% / 100% 100% 0 0;
+            bottom: 0;
+            left: 0;
+            transform: translateZ(10px);
+            box-shadow: 0 0 10px gold, 0 0 20px orange;
+        }
+
+        /* 皇冠尖刺 */
+        .spike {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 40px solid gold; /* 默认金色 */
+            top: -40px;
+            left: 50%;
+            transform-origin: bottom center;
+            box-shadow: 0 0 5px gold;
+        }
+
+        .spike:nth-child(1) { left: 10%; transform: translateX(-50%) translateZ(20px); }
+        .spike:nth-child(2) { left: 30%; transform: translateX(-50%) translateZ(25px); }
+        .spike:nth-child(3) { left: 50%; transform: translateX(-50%) translateZ(30px); } /* 中间最高 */
+        .spike:nth-child(4) { left: 70%; transform: translateX(-50%) translateZ(25px); }
+        .spike:nth-child(5) { left: 90%; transform: translateX(-50%) translateZ(20px); }
+
+        /* 皇冠宝石 */
+        .gem {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: radial-gradient(circle at 30% 30%, #fff, #FF6B6B, #8B0000);
+            border-radius: 50%;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%) translateZ(35px); /* 在中间尖刺上 */
+            box-shadow: 0 0 5px #FF6B6B, 0 0 15px #FF0000;
+        }
+
+        /* 皇后皇冠使用红色宝石 */
+        .rank-queen .gem {
+            background: radial-gradient(circle at 30% 30%, #fff, #FF6B6B, #8B0000);
+            box-shadow: 0 0 5px #FF6B6B, 0 0 15px #FF0000;
+        }
+
+        /* 皇贵妃皇冠使用蓝色宝石 */
+        .rank-imperial-noble .gem {
+            background: radial-gradient(circle at 30% 30%, #fff, #87CEEB, #1E90FF);
+            box-shadow: 0 0 5px #87CEEB, 0 0 15px #1E90FF;
+        }
+
+        /* 贵妃皇冠使用绿色宝石 */
+        .rank-noble .gem {
+            background: radial-gradient(circle at 30% 30%, #fff, #98FB98, #32CD32);
+            box-shadow: 0 0 5px #98FB98, 0 0 15px #32CD32;
+        }
+
+        /* 妃及以下使用黄色宝石 */
+        .rank-consort .gem,
+        .rank-pin .gem,
+        .rank-guiren .gem,
+        .rank-changzai .gem,
+        .rank-daying .gem {
+            background: radial-gradient(circle at 30% 30%, #fff, #FFD700, #DAA520);
+            box-shadow: 0 0 5px #FFD700, 0 0 15px #DAA520;
+        }
+
+        /* 3D皇冠展开动画 */
+        @keyframes expand3DCrown {
+            0% {
+                transform: scale(0) rotateY(0deg) rotateX(0deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(2) rotateY(180deg) rotateX(10deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(8) rotateY(360deg) rotateX(20deg);
+                opacity: 0;
+            }
+        }
+
+
+        /* ========== 提示高亮动画 ========== */
+        .card.highlight {
+            animation: highlightPulse 1s ease-in-out;
+        }
+
+        @keyframes highlightPulse {
+            0% { box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(255, 215, 0, 0.8), 0 0 20px gold; }
+            100% { box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.4); }
+        }
+
+        /* ========== 舞台灯光效果 ========== */
+        #stage-lights {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9998; /* 在皇冠动画下方 */
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #stage-lights.active {
+            opacity: 1;
+        }
+
+        .light-beam {
+            position: absolute;
+            width: 100px;
+            height: 100vh;
+            background: conic-gradient(
+                transparent,
+                rgba(255, 215, 0, 0.5),
+                rgba(255, 105, 180, 0.5),
+                rgba(0, 191, 255, 0.5),
+                rgba(50, 205, 50, 0.5),
+                transparent
+            );
+            filter: blur(30px);
+            opacity: 0.7;
+            animation: rotateLights 10s linear infinite;
+        }
+
+        .light-beam:nth-child(2) {
+            animation-delay: -2s;
+            background: conic-gradient(
+                transparent,
+                rgba(255, 105, 180, 0.5),
+                rgba(0, 191, 255, 0.5),
+                rgba(50, 205, 50, 0.5),
+                rgba(255, 215, 0, 0.5),
+                transparent
+            );
+        }
+
+        .light-beam:nth-child(3) {
+            animation-delay: -4s;
+            background: conic-gradient(
+                transparent,
+                rgba(0, 191, 255, 0.5),
+                rgba(50, 205, 50, 0.5),
+                rgba(255, 215, 0, 0.5),
+                rgba(255, 105, 180, 0.5),
+                transparent
+            );
+        }
+
+        .light-beam:nth-child(4) {
+            animation-delay: -6s;
+            background: conic-gradient(
+                transparent,
+                rgba(50, 205, 50, 0.5),
+                rgba(255, 215, 0, 0.5),
+                rgba(255, 105, 180, 0.5),
+                rgba(0, 191, 255, 0.5),
+                transparent
+            );
+        }
+
+        @keyframes rotateLights {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ========== 响应式适配 ========== */
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+                min-height: 500px;
+                height: calc(100vh - 10px);
+            }
+
+            .header {
+                gap: 10px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .game-info {
+                grid-template-columns: 1fr 1fr;
+                font-size: 1rem;
+            }
+
+            .info-value {
+                font-size: 1.5rem;
+            }
+
+            .game-board {
+                grid-template-columns: repeat(4, 1fr);
+                grid-gap: 6px;
+            }
+
+            .card {
+                height: 80px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            button {
+                width: 100%;
+                justify-content: center;
+                font-size: 15px;
+            }
+
+            .rankings {
+                flex-direction: column;
+                align-items: center;
+                font-size: 13px;
+            }
+
+            .fullscreen-btn {
+                top: 10px;
+                right: 10px;
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+
+            .inner-scrollbar-track {
+                right: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 舞台灯光容器 -->
+<div id="stage-lights"></div>
+
+<div class="container">
+
+    <div class="fullscreen-btn" id="fullscreen-btn" title="进入全屏">
+        <i class="fas fa-expand"></i>
+    </div>
+
+    <div id="scrollable-area" class="clickable-area">
+        <div id="content-wrapper">
+
+            <div class="header">
+                <i class="crown-icon fas fa-crown"></i>
+                <h1>皇帝妃子翻牌游戏</h1>
+                <i class="crown-icon fas fa-crown"></i>
+            </div>
+
+            <div class="instructions">
+                <h3><i class="fas fa-info-circle"></i> 游戏规则</h3>
+                <p><strong>🎯 核心玩法：</strong>翻开两张卡片，若广告图片相同，则保持翻开；若不同则翻回。匹配<strong>所有</strong>广告对即可获胜。</p>
+                <p><strong>👸 妃子系统：</strong>场上有随机妃子卡，翻开后可查看身份，并<strong>立即增加游戏时间</strong>（皇后+10秒，答应+2秒）。</p>
+                <p><strong>💰 积分机制：</strong>妃子积分不会立刻到账，必须<strong>通关成功后</strong>才能将所有已翻开的妃子积分累加至总分。</p>
+                <p><strong>⏱️ 时间策略：</strong>善用妃子卡争取更多时间，但注意每关时间最多不超过初始时间的两倍。</p>
+                <p><strong>💡 提示功能：</strong>点击【提示】按钮可高亮一对可匹配的广告卡（共3次机会）。</p>
+            </div>
+
+            <div class="game-info">
+                <div class="info-item">
+                    <div>广告匹配对数</div>
+                    <div class="info-value" id="ads-matched">0</div>
+                    <div id="total-ad-pairs">/?</div>
+                </div>
+                <div class="info-item">
+                    <div>尝试次数</div>
+                    <div class="info-value" id="attempts">0</div>
+                </div>
+                <div class="info-item">
+                    <div>总积分</div>
+                    <div class="info-value" id="total-points">0</div>
+                </div>
+                <div class="level-info">
+                    <div>关卡: <span id="current-level">1</span>/15</div>
+                    <div>时间: <span id="time-left">60</span>秒</div>
+                    <div>目标: <span id="target-pairs">?</span>对</div>
+                </div>
+            </div>
+
+            <div class="current-ranks">
+                <h3>本局妃子卡片</h3>
+                <div id="current-ranks-container"></div>
+            </div>
+
+            <div class="game-board" id="game-board"></div>
+
+            <div class="level-selection" id="level-selection"></div>
+
+            <div class="rankings">
+                <div class="rank-item">皇后: 50积分 <i class="fas fa-crown"></i><i class="fas fa-crown"></i><i class="fas fa-crown"></i></div>
+                <div class="rank-item">皇贵妃: 40积分 <i class="fas fa-crown"></i><i class="fas fa-crown"></i></div>
+                <div class="rank-item">贵妃: 30积分 <i class="fas fa-crown"></i></div>
+                <div class="rank-item">妃: 20积分</div>
+                <div class="rank-item">嫔: 10积分</div>
+                <div class="rank-item">贵人: 5积分</div>
+                <div class="rank-item">常在: 3积分</div>
+                <div class="rank-item">答应: 2积分</div>
+            </div>
+
+            <div class="controls">
+                <button id="restart"><i class="fas fa-redo"></i> 重新开始</button>
+                <button id="hint"><i class="fas fa-lightbulb"></i> 提示 (<span id="hint-count">3</span>)</button>
+                <button id="next-level" disabled><i class="fas fa-arrow-right"></i> 下一关</button>
+            </div>
+
+            <div class="result" id="result"></div>
+
+        </div>
+
+        <div class="inner-scrollbar-track">
+            <div class="inner-scrollbar-thumb" id="scroll-thumb"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const contentWrapper = document.getElementById('content-wrapper');
+        const scrollThumb = document.getElementById('scroll-thumb');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const scrollableArea = document.getElementById('scrollable-area');
+        const stageLights = document.getElementById('stage-lights');
+
+        let isDragging = false;
+        let touchStartY = 0;
+
+        function updateThumb() {
+            if (!contentWrapper || !scrollThumb) return;
+            const { scrollTop, scrollHeight, clientHeight } = contentWrapper;
+            const totalScrollable = scrollHeight - clientHeight;
+
+            if (totalScrollable <= 0) {
+                document.querySelector('.inner-scrollbar-track').style.display = 'none';
+                return;
+            } else {
+                document.querySelector('.inner-scrollbar-track').style.display = 'block';
+            }
+
+            const thumbHeight = Math.max((clientHeight / scrollHeight) * clientHeight, 20);
+            const maxTop = clientHeight - thumbHeight;
+            const ratio = scrollTop / totalScrollable;
+            const thumbTop = ratio * maxTop;
+
+            scrollThumb.style.height = `${thumbHeight}px`;
+            scrollThumb.style.top = `${thumbTop}px`;
+        }
+
+        contentWrapper.addEventListener('scroll', updateThumb);
+
+        scrollThumb.addEventListener('mousedown', e => {
+            isDragging = true;
+            const startY = e.clientY;
+            const startTop = parseInt(window.getComputedStyle(scrollThumb).top, 10);
+            scrollThumb.classList.add('dragging');
+            document.querySelector('.inner-scrollbar-track').style.opacity = '1';
+
+            const onMove = moveEvent => {
+                if (!isDragging) return;
+                const dy = moveEvent.clientY - startY;
+                const maxTop = contentWrapper.clientHeight - scrollThumb.offsetHeight;
+                const newTop = Math.max(0, Math.min(maxTop, startTop + dy));
+                const ratio = newTop / maxTop;
+                contentWrapper.scrollTop = ratio * (contentWrapper.scrollHeight - contentWrapper.clientHeight);
+            };
+
+            const upHandler = () => {
+                isDragging = false;
+                scrollThumb.classList.remove('dragging');
+                document.querySelector('.inner-scrollbar-track').style.opacity = '';
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', upHandler);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', upHandler);
+        });
+
+        document.querySelector('.inner-scrollbar-track').addEventListener('click', e => {
+            const trackRect = e.currentTarget.getBoundingClientRect();
+            const clickY = e.clientY - trackRect.top;
+            const thumbH = scrollThumb.offsetHeight;
+            const targetRatio = (clickY - thumbH / 2) / (trackRect.height - thumbH);
+            const targetScroll = targetRatio * (contentWrapper.scrollHeight - contentWrapper.clientHeight);
+            contentWrapper.scrollTop = targetScroll;
+        });
+
+        function initAndResize() {
+            requestAnimationFrame(updateThumb);
+        }
+
+        initAndResize();
+        window.addEventListener('resize', initAndResize);
+
+        // ======================== 全屏 ========================
+        scrollableArea.addEventListener('dblclick', toggleFullscreen);
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => console.error("无法进入全屏:", e));
+                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                fullscreenBtn.title = "退出全屏";
+            } else {
+                document.exitFullscreen();
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                fullscreenBtn.title = "进入全屏";
+            }
+            setTimeout(updateThumb, 100);
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+            } else {
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+            }
+            setTimeout(updateThumb, 100);
+        });
+
+        // ======== 触屏拖拽支持 ========
+        contentWrapper.addEventListener('touchstart', e => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: false });
+
+        contentWrapper.addEventListener('touchmove', e => {
+            const dy = e.touches[0].clientY - touchStartY;
+            touchStartY = e.touches[0].clientY;
+            contentWrapper.scrollTop -= dy;
+            updateThumb();
+            e.preventDefault();
+        }, { passive: false });
+
+        // ======== 游戏逻辑 ========
+        const gameBoard = document.getElementById('game-board');
+        const restartButton = document.getElementById('restart');
+        const hintButton = document.getElementById('hint');
+        const nextLevelButton = document.getElementById('next-level');
+        const adsMatchedElement = document.getElementById('ads-matched'); // 修改为广告匹配计数
+        const attemptsElement = document.getElementById('attempts');
+        const totalPointsElement = document.getElementById('total-points');
+        const resultElement = document.getElementById('result');
+        const currentRanksContainer = document.getElementById('current-ranks-container');
+        const currentLevelElement = document.getElementById('current-level');
+        const timeLeftElement = document.getElementById('time-left');
+        const targetPairsElement = document.getElementById('target-pairs');
+        const totalAdPairsElement = document.getElementById('total-ad-pairs'); // 修改为总广告对数
+        const hintCountElement = document.getElementById('hint-count');
+        const levelSelectionContainer = document.getElementById('level-selection');
+
+        let cards = [];
+        let flippedCards = [];
+        let adsMatched = 0; // 新增：用于计数所有匹配成功的广告对
+        let totalAdPairs = 0; // 新增：场上所有广告对的数量
+        let attempts = 0;
+        let totalPoints = 0;
+        let gameCompleted = false;
+        let selectedRanks = [];
+        let currentLevel = 1;
+        let timeLeft = 0;
+        let timer = null;
+        let hintsRemaining = 3;
+        let completedLevels = [];
+        let collectedImperialPoints = 0;
+        let targetPairsCount = 0; // 目标广告对数量（用于显示）
+
+        // 网格配置 [行, 列]
+        const gridSizeConfig = [
+            null,
+            [3,3], [3,3], [3,3],
+            [4,4], [4,4], [4,4], [4,4],
+            [5,5], [5,5], [5,5],
+            [6,6], [6,6], [6,6],
+            [7,7], [7,7]
+        ];
+
+        // 妃子加时
+        const imperialTimeBonus = {
+            "皇后": 10, "皇贵妃": 8, "贵妃": 6, "妃": 5,
+            "嫔": 4, "贵人": 3, "常在": 2, "答应": 2
+        };
+
+        const ranks = [
+            { name: "皇后", points: 50, crowns: 3 },
+            { name: "皇贵妃", points: 40, crowns: 2 },
+            { name: "贵妃", points: 30, crowns: 1 },
+            { name: "妃", points: 20, crowns: 0 },
+            { name: "嫔", points: 10, crowns: 0 },
+            { name: "贵人", points: 5, crowns: 0 },
+            { name: "常在", points: 3, crowns: 0 },
+            { name: "答应", points: 2, crowns: 0 }
+        ];
+
+        const adImages = [
+            { name: "可口可乐", color: "#FF6B6B" }, { name: "Nike", color: "#4ECDC4" },
+            { name: "小米", color: "#FFE66D" }, { name: "华为", color: "#9b59b6" },
+            { name: "苹果", color: "#3498db" }, { name: "翠屏汇", color: "#2ecc71" },
+            { name: "红豆", color: "#e74c3c" }, { name: "新日电动车", color: "#1abc9c" },
+            { name: "KFC", color: "#f39c12" }, { name: "麦当劳", color: "#d35400" },
+            { name: "宝马", color: "#34495e" }, { name: "奔驰", color: "#8e44ad" },
+            { name: "乐事", color: "#8e44ad" }, { name: "苗小坛", color: "#8e44ad" },
+            { name: "希尔顿", color: "#8e44ad" }, { name: "蒙牛", color: "#8e44ad" },
+            { name: "伊利", color: "#8e44ad" }, { name: "光明", color: "#8e44ad" },
+            { name: "锡笼记", color: "#8e44ad" }, { name: "泡泡玛特", color: "#8e44ad" }
+        ];
+
+        function initLevelSelection() {
+            levelSelectionContainer.innerHTML = '';
+            for (let i = 1; i <= 15; i++) {
+                const btn = document.createElement('div');
+                btn.className = 'level-btn';
+                if (i === currentLevel) btn.classList.add('current');
+                else if (completedLevels.includes(i)) btn.classList.add('completed');
+                btn.textContent = i;
+                btn.addEventListener('click', () => {
+                    if (i <= completedLevels.length + 1) startLevel(i);
+                });
+                levelSelectionContainer.appendChild(btn);
+            }
+        }
+
+        function startLevel(level) {
+            clearInterval(timer);
+            currentLevel = level;
+            const [rows, cols] = gridSizeConfig[level];
+            const totalSlots = rows * cols;
+            const basePairs = Math.floor(totalSlots * 0.4); // 目标广告对数 ≈ 40%
+            const imperialCount = Math.min(Math.ceil(level / 3), 5); // 最多5个妃子
+            const timeLimit = 60 + level * 10;
+            const baseReward = 50 + level * 10;
+
+            gameBoard.innerHTML = '';
+            cards = []; flippedCards = []; adsMatched = 0; attempts = 0; // 重置 adsMatched
+            gameCompleted = false; hintsRemaining = 3; collectedImperialPoints = 0;
+
+            adsMatchedElement.textContent = '0'; // 更新UI
+            attemptsElement.textContent = '0';
+            resultElement.style.display = 'none';
+            hintCountElement.textContent = hintsRemaining;
+            hintButton.disabled = false;
+
+            currentLevelElement.textContent = level;
+            timeLeft = timeLimit;
+            timeLeftElement.textContent = timeLeft;
+            
+            // 设置目标广告对数量（仅用于显示）
+            targetPairsCount = basePairs;
+            targetPairsElement.textContent = targetPairsCount;
+            // totalAdPairsElement.textContent = `/ ${targetPairsCount}`; // 初始化为 ?，后面会更新
+
+            // 选择妃子
+            const availableRanks = [...ranks];
+            selectedRanks = [];
+            for (let i = 0; i < imperialCount; i++) {
+                const idx = Math.floor(Math.random() * availableRanks.length);
+                selectedRanks.push(availableRanks[idx]);
+                availableRanks.splice(idx, 1);
+            }
+
+            currentRanksContainer.innerHTML = selectedRanks.map(r => {
+                const crowns = '<i class="fas fa-crown" style="color:#ffd700;margin:0 2px;"></i>'.repeat(r.crowns);
+                return `<span style="margin:10px;color:#ffd700">${r.name}(+${r.points})${crowns}</span>`;
+            }).join('');
+
+            // 广告映射
+            const shuffledAds = shuffleArray([...adImages]);
+            const selectedAdImages = shuffledAds.slice(0, basePairs);
+            const adValueToImageMap = new Map();
+            
+            // 为每个目标广告对分配一个唯一的 value (从 0 开始)
+            for (let i = 0; i < basePairs; i++) {
+                adValueToImageMap.set(i, selectedAdImages[i]);
+            }
+
+            let cardValues = [];
+
+            // 添加目标广告对 (使用从 0 开始的唯一 value)
+            for (let i = 0; i < basePairs; i++) {
+                cardValues.push({ type: 'ad', value: i, isTarget: true });
+                cardValues.push({ type: 'ad', value: i, isTarget: true });
+            }
+
+            // 添加妃子
+            selectedRanks.forEach(r => {
+                cardValues.push({ type: 'imperial', value: r });
+            });
+
+            // 计算需要多少填充卡牌
+            const remainingSlots = totalSlots - cardValues.length;
+            
+            if (remainingSlots > 0) {
+                // 计算需要多少对填充卡牌
+                const fillerPairsNeeded = Math.floor(remainingSlots / 2);
+                
+                // 从广告池中选择填充广告（排除已选中的目标广告）
+                const fillerPool = adImages.filter(a => !selectedAdImages.includes(a));
+                
+                // 如果填充池不够，允许重复使用广告
+                let expandedFillerPool = [...fillerPool];
+                if (expandedFillerPool.length < fillerPairsNeeded) {
+                    const needed = fillerPairsNeeded - expandedFillerPool.length;
+                    for (let i = 0; i < needed; i++) {
+                        expandedFillerPool.push(...fillerPool);
+                    }
+                }
+                
+                // 打乱填充池
+                shuffleArray(expandedFillerPool);
+                
+                // 为每对填充卡牌分配唯一值
+                const fillerStartValue = basePairs + selectedRanks.length; // 确保不与目标广告和妃子冲突
+                for (let i = 0; i < fillerPairsNeeded; i++) {
+                    const ad = expandedFillerPool[i % expandedFillerPool.length];
+                    const value = fillerStartValue + i;
+                    // 添加一对填充卡牌
+                    cardValues.push({ 
+                        type: 'ad', 
+                        value: value, 
+                        isTarget: false, 
+                        fillerAd: ad 
+                    });
+                    cardValues.push({ 
+                        type: 'ad', 
+                        value: value, 
+                        isTarget: false, 
+                        fillerAd: ad 
+                    });
+                }
+                
+                // 如果有奇数个剩余槽位，添加一个妃子卡（确保总卡数正确）
+                if (remainingSlots % 2 === 1) {
+                    // 从可用妃子中随机选择一个
+                    const randomRank = availableRanks.length > 0 
+                        ? availableRanks[Math.floor(Math.random() * availableRanks.length)]
+                        : ranks[Math.floor(Math.random() * ranks.length)];
+                    cardValues.push({ type: 'imperial', value: randomRank });
+                }
+            }
+
+            shuffleArray(cardValues);
+
+            // 设置网格
+            gameBoard.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+            cardValues.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card';
+
+                let crownIcons = '';
+                if (item.type === 'imperial') {
+                    for (let i = 0; i < item.value.crowns; i++) {
+                        crownIcons += '<i class="crown fas fa-crown"></i>';
+                    }
+                }
+
+                // 确定要显示的广告信息
+                let adInfo = null;
+                if (item.type === 'ad' && item.isTarget) {
+                    adInfo = adValueToImageMap.get(item.value);
+                } else if (item.type === 'ad' && !item.isTarget && item.fillerAd) {
+                    // 使用填充卡池中的广告信息
+                    adInfo = item.fillerAd;
+                } else if (item.type === 'ad' && !item.isTarget) {
+                     // fallback: 如果没有 fillerAd 信息，则从原始 adImages 中随机选一个
+                    console.warn("Fallback: 使用随机广告填充", item);
+                    adInfo = adImages[Math.floor(Math.random() * adImages.length)];
+                }
+
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-back">?</div>
+                        <div class="card-front ${item.type === 'imperial' ? 'imperial-front' : ''}">
+                            ${item.type === 'imperial' ?
+                                `<div class="rank">${item.value.name}</div>
+                                 <div class="crowns">${crownIcons}</div>
+                                 <div class="points">+${item.value.points}积分</div>` :
+                                `<div class="ad-img" style="background:${adInfo?.color || '#ccc'}">
+                                    ${adInfo?.name || '广告'}
+                                 </div>`
+                            }
+                        </div>
+                    </div>
+                `;
+
+                card.dataset.type = item.type;
+                // 修复：妃子卡的 value 是对象，不能直接 toString
+                if (item.type === 'imperial') {
+                    card.dataset.value = item.value.name; // 使用妃子名称作为唯一标识
+                    card.dataset.rank = item.value.name;
+                    card.dataset.points = item.value.points;
+                } else {
+                    card.dataset.value = item.value.toString();
+                    card.dataset.isTarget = item.isTarget ? 'true' : 'false';
+                }
+
+                card.addEventListener('click', () => flipCard(card));
+                gameBoard.appendChild(card);
+                cards.push(card);
+            });
+
+            // 计算总广告对数并在UI上显示
+            totalAdPairs = cardValues.filter(c => c.type === 'ad').length / 2;
+            totalAdPairsElement.textContent = `/ ${totalAdPairs}`; // 更新UI显示总广告对数
+
+            initLevelSelection();
+            nextLevelButton.disabled = true;
+
+            timer = setInterval(() => {
+                timeLeft--;
+                timeLeftElement.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    gameCompleted = true;
+                    resultElement.style.display = 'block';
+                    resultElement.textContent = `时间到！游戏失败。`;
+                    resultElement.style.background = 'rgba(139,0,0,0.3)';
+                    resultElement.style.color = '#ff6b6b';
+                }
+            }, 1000);
+        }
+
+
+        // 创建舞台灯光
+        function createStageLights() {
+            stageLights.innerHTML = ''; // 清空现有灯光
+            for (let i = 0; i < 4; i++) {
+                const beam = document.createElement('div');
+                beam.className = 'light-beam';
+                // 随机位置
+                beam.style.left = `${Math.random() * 100}%`;
+                stageLights.appendChild(beam);
+            }
+        }
+
+        // 激活舞台灯光
+        function activateStageLights(duration = 3000) {
+            stageLights.classList.add('active');
+            setTimeout(() => {
+                stageLights.classList.remove('active');
+            }, duration);
+        }
+
+        function flipCard(card) {
+            if (gameCompleted || card.classList.contains('flipped') ||
+                (flippedCards.length >= 2 && card.dataset.type !== 'imperial')) return;
+
+            if (card.dataset.type === 'imperial') {
+                if (!card.classList.contains('flipped')) {
+                    card.classList.add('flipped');
+                    card.classList.add('matched');
+                    const points = parseInt(card.dataset.points);
+                    collectedImperialPoints += points;
+                    const bonusSeconds = imperialTimeBonus[card.dataset.rank] || 2;
+                    const maxTime = 60 + currentLevel * 10;
+                    timeLeft = Math.min(timeLeft + bonusSeconds, maxTime);
+                    timeLeftElement.textContent = timeLeft;
+                    showPointsAnimation(card, points);
+                    // 使用新的 3D 皇冠动画
+                    trigger3DCrownAnimation(card, card.dataset.rank);
+                    
+                    // 激活舞台灯光
+                    createStageLights(); // 每次翻妃子都重新生成灯光位置
+                    activateStageLights(3000); // 持续3秒
+                }
+                return;
+            }
+
+            if (flippedCards.length >= 2) return;
+
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                attempts++;
+                attemptsElement.textContent = attempts;
+                setTimeout(() => {
+                    const [c1, c2] = flippedCards;
+                    if (c1.dataset.value === c2.dataset.value) {
+                        c1.classList.add('matched'); c2.classList.add('matched');
+                        
+                        // 修改：无论是否是目标广告，只要匹配成功就增加 adsMatched 计数器
+                        adsMatched++;
+                        adsMatchedElement.textContent = adsMatched;
+                        
+                        // 修改：过关条件改为匹配所有广告对
+                        if (adsMatched === totalAdPairs) {
+                            gameCompleted = true;
+                            clearInterval(timer);
+                            const reward = 50 + currentLevel * 10;
+                            totalPoints += reward + collectedImperialPoints;
+                            totalPointsElement.textContent = totalPoints;
+                            if (!completedLevels.includes(currentLevel)) completedLevels.push(currentLevel);
+                            resultElement.style.display = 'block';
+                            resultElement.textContent = `恭喜！第${currentLevel}关完成！获得${reward}+${collectedImperialPoints}=总${reward+collectedImperialPoints}分`;
+                            nextLevelButton.disabled = false;
+                        }
+                    } else {
+                        c1.classList.remove('flipped'); c2.classList.remove('flipped');
+                    }
+                    flippedCards = [];
+                }, 1000);
+            }
+        }
+
+        hintButton.addEventListener('click', () => {
+            if (hintsRemaining <= 0 || gameCompleted) return;
+            hintsRemaining--;
+            hintCountElement.textContent = hintsRemaining;
+            hintButton.disabled = hintsRemaining <= 0;
+
+            // 修改：提示功能寻找所有未匹配的广告对
+            const allValueMap = new Map();
+            cards.forEach(c => {
+                if (!c.classList.contains('matched') && !c.classList.contains('flipped') && 
+                    c.dataset.type === 'ad') {
+                    const v = c.dataset.value;
+                    if (!allValueMap.has(v)) allValueMap.set(v, []);
+                    allValueMap.get(v).push(c);
+                }
+            });
+
+            let pair = null;
+            for (const [v, list] of allValueMap) {
+                if (list.length === 2) { pair = list; break; }
+            }
+
+            if (pair) {
+                pair.forEach(c => c.classList.add('highlight'));
+                setTimeout(() => pair.forEach(c => c.classList.remove('highlight')), 1000);
+            }
+        });
+
+        function showPointsAnimation(card, points) {
+            const p = document.createElement('div');
+            p.className = 'points-popup';
+            p.textContent = `+${points}`;
+            const r = card.getBoundingClientRect();
+            p.style.left = `${r.left + r.width/2}px`;
+            p.style.top = `${r.top}px`;
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 1000);
+        }
+
+        // --- 修改：使用新的 3D 皇冠动画函数 ---
+        function trigger3DCrownAnimation(card, rankName) {
+            const container = document.createElement('div');
+            container.className = 'crown-animation-container';
+
+            // 创建新的 3D 皇冠元素
+            const crown3D = document.createElement('div');
+            crown3D.className = 'three-dee-crown';
+
+            // 根据妃子等级添加不同的类，以应用不同的宝石颜色
+            const rankClassMap = {
+                "皇后": "rank-queen",
+                "皇贵妃": "rank-imperial-noble",
+                "贵妃": "rank-noble",
+                "妃": "rank-consort",
+                "嫔": "rank-pin",
+                "贵人": "rank-guiren",
+                "常在": "rank-changzai",
+                "答应": "rank-daying"
+            };
+            const rankClass = rankClassMap[rankName] || "rank-consort";
+            crown3D.classList.add(rankClass);
+
+            // 创建皇冠的各个部分
+            const base = document.createElement('div');
+            base.className = 'crown-base';
+            crown3D.appendChild(base);
+
+            for (let i = 0; i < 5; i++) {
+                const spike = document.createElement('div');
+                spike.className = 'spike';
+                // 可以为不同等级的妃子设置不同的尖刺颜色（如果需要）
+                // if (rankName === '皇后') spike.style.borderBottomColor = '#FF6B6B'; 
+                crown3D.appendChild(spike);
+            }
+
+            const gem = document.createElement('div');
+            gem.className = 'gem';
+            crown3D.appendChild(gem);
+
+            container.appendChild(crown3D);
+            document.body.appendChild(container);
+
+            // 动画结束后移除元素
+            setTimeout(() => {
+                if (container.parentNode) {
+                    container.parentNode.removeChild(container);
+                }
+            }, 1500); // 与CSS动画时长一致
+        }
+
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        restartButton.addEventListener('click', () => startLevel(currentLevel));
+        nextLevelButton.addEventListener('click', () => {
+            if (currentLevel < 15) startLevel(currentLevel + 1);
+        });
+
+        initLevelSelection();
+        startLevel(1);
+    });
+</script>
+
+</body>
+</html>
